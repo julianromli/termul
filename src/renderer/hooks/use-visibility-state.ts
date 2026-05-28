@@ -6,6 +6,7 @@ import {
   useTerminalStore
 } from '@/stores/terminal-store'
 import { cleanupTauriListener, isTauriContext } from '@/lib/tauri-runtime'
+import { dispatchAppVisibilityChange } from '@/lib/app-visibility-events'
 
 function debugLogMemoryStats(): void {
   if (!import.meta.env.DEV) return
@@ -124,6 +125,7 @@ export function useVisibilityState(): void {
         console.debug('[Visibility] App visibility changed:', isVisible)
       }
       applyAppHiddenState(isVisible)
+      dispatchAppVisibilityChange(isVisible)
 
       if (isVisible) {
         clearHiddenMaintenance()

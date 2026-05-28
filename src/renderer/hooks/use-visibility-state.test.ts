@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest'
 import { renderHook, waitFor } from '@testing-library/react'
 import { useVisibilityState } from './use-visibility-state'
+import { APP_VISIBILITY_CHANGE_EVENT } from '@/lib/app-visibility-events'
 
 const {
   mockSetVisibilityState,
@@ -101,6 +102,40 @@ describe('useVisibilityState', () => {
     expect(
       mockSetVisibilityState.mock.calls.some((call) => call[0 as number] === false)
     ).toBe(true)
+  })
+
+  it('dispatches renderer app visibility events when visibility changes', async () => {
+    const visibilityListener = vi.fn()
+    window.addEventListener(APP_VISIBILITY_CHANGE_EVENT, visibilityListener)
+
+    try {
+      renderHook(() => useVisibilityState())
+
+      await waitFor(() => {
+        expect(visibilityListener).toHaveBeenCalledWith(
+          expect.objectContaining({
+            detail: { isVisible: true }
+          })
+        )
+      })
+
+      visibilityListener.mockClear()
+      Object.defineProperty(document, 'visibilityState', {
+        configurable: true,
+        value: 'hidden'
+      })
+      document.dispatchEvent(new Event('visibilitychange'))
+
+      await waitFor(() => {
+        expect(visibilityListener).toHaveBeenCalledWith(
+          expect.objectContaining({
+            detail: { isVisible: false }
+          })
+        )
+      })
+    } finally {
+      window.removeEventListener(APP_VISIBILITY_CHANGE_EVENT, visibilityListener)
+    }
   })
 
   it('schedules hidden-state maintenance while the app stays hidden', () => {

@@ -57,6 +57,7 @@ const mockTerminalInstance = {
   write: vi.fn(),
   clear: vi.fn(),
   focus: vi.fn(),
+  refresh: vi.fn(),
   dispose: vi.fn(),
   cols: 80,
   rows: 24,
@@ -118,6 +119,7 @@ vi.mock('@xterm/xterm', () => ({
     write = mockTerminalInstance.write
     clear = mockTerminalInstance.clear
     focus = mockTerminalInstance.focus
+    refresh = mockTerminalInstance.refresh
     dispose = mockTerminalInstance.dispose
     cols = mockTerminalInstance.cols
     rows = mockTerminalInstance.rows
@@ -221,6 +223,7 @@ import { terminalApi, systemApi, clipboardApi } from '@/lib/api'
 import { addRendererRef, removeRendererRef } from '@/lib/tauri-terminal-api'
 import { openFilePathFromTerminal } from '@/lib/file-path-links'
 import { clearTerminalCache } from './terminal-cache'
+import { APP_VISIBILITY_CHANGE_EVENT } from '@/lib/app-visibility-events'
 
 const {
   mockRecordTerminalContinuityEvent,
@@ -562,6 +565,18 @@ describe('ConnectedTerminal', () => {
   it('should apply custom className', () => {
     const { container } = render(<ConnectedTerminal className="custom-class" />)
     expect(container.querySelector('.custom-class')).toBeTruthy()
+  })
+
+  it('should keep visual padding outside the xterm fit container', () => {
+    const { container } = render(<ConnectedTerminal className="custom-class" />)
+
+    const paddedContainer = container.querySelector('.custom-class')
+    const fitContainer = container.querySelector('[data-terminal-fit-container="true"]')
+
+    expect(paddedContainer).toBeTruthy()
+    expect(paddedContainer?.className).toContain('px-4')
+    expect(fitContainer).toBeTruthy()
+    expect(fitContainer?.className).not.toContain('px-4')
   })
 
   it('should dispose terminal on unmount', () => {
@@ -1690,6 +1705,60 @@ describe('ConnectedTerminal', () => {
       expect(mockFitAddonInstance.fit).toHaveBeenCalledTimes(1)
     })
 
+    it('should recover when app visibility event reports restore without document visibilitychange', async () => {
+      vi.useFakeTimers()
+
+      render(<ConnectedTerminal />)
+
+      await vi.waitFor(() => {
+        expect(vi.mocked(terminalApi).spawn).toHaveBeenCalled()
+      })
+
+      mockFitAddonInstance.fit.mockClear()
+      mockTerminalInstance.refresh.mockClear()
+      vi.mocked(terminalApi).resize.mockClear()
+
+      window.dispatchEvent(
+        new CustomEvent(APP_VISIBILITY_CHANGE_EVENT, {
+          detail: { isVisible: true }
+        })
+      )
+
+      await vi.advanceTimersByTimeAsync(200)
+
+      expect(mockFitAddonInstance.fit).toHaveBeenCalled()
+      expect(mockTerminalInstance.refresh).toHaveBeenCalledWith(0, mockTerminalInstance.rows - 1)
+      expect(vi.mocked(terminalApi).resize).toHaveBeenCalledWith(
+        'terminal-123',
+        expect.any(Number),
+        expect.any(Number)
+      )
+    })
+
+    it('should not recover hidden workspace tabs from app visibility events', async () => {
+      vi.useFakeTimers()
+
+      render(<ConnectedTerminal isVisible={false} />)
+
+      await vi.waitFor(() => {
+        expect(vi.mocked(terminalApi).spawn).toHaveBeenCalled()
+      })
+
+      mockFitAddonInstance.fit.mockClear()
+      vi.mocked(terminalApi).resize.mockClear()
+
+      window.dispatchEvent(
+        new CustomEvent(APP_VISIBILITY_CHANGE_EVENT, {
+          detail: { isVisible: true }
+        })
+      )
+
+      await vi.advanceTimersByTimeAsync(200)
+
+      expect(mockFitAddonInstance.fit).not.toHaveBeenCalled()
+      expect(vi.mocked(terminalApi).resize).not.toHaveBeenCalled()
+    })
+
     it('should handle visibility broadcast with isVisible prop', async () => {
       vi.useFakeTimers()
 
@@ -2577,7 +2646,7 @@ describe('ConnectedTerminal', () => {
       })
 
       // Mock container dimensions so performFit sees non-zero size
-      const div = container.querySelector('div')
+      const div = container.querySelector('[data-terminal-fit-container="true"]')
       expect(div).toBeTruthy()
       ;(div as HTMLDivElement).getBoundingClientRect = vi.fn().mockReturnValue({
         width: 900,

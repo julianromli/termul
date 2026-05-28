@@ -61,6 +61,10 @@ import {
 	recordTerminalContinuityEvent,
 } from "@/lib/terminal-continuity-instrumentation";
 import { useActiveProject } from "@/stores/project-store";
+import {
+	APP_VISIBILITY_CHANGE_EVENT,
+	type AppVisibilityChangeDetail,
+} from "@/lib/app-visibility-events";
 
 // Common readline/shell Ctrl sequences that pass through to the PTY only when
 // no configured app shortcut claims them. Checking these LAST (after app
@@ -209,6 +213,8 @@ function ConnectedTerminalComponent({
 	const rendererPreference = useTerminalRenderer();
 	const rendererPreferenceRef = useRef(rendererPreference);
 	rendererPreferenceRef.current = rendererPreference;
+	const isVisibleRef = useRef(isVisible);
+	isVisibleRef.current = isVisible;
 
 	const activeProject = useActiveProject();
 	const activeProjectPathRef = useRef<string | undefined>(activeProject?.path);
@@ -1459,6 +1465,13 @@ function ConnectedTerminalComponent({
 
 		// Sync PTY dimensions
 		const terminal = terminalRef.current;
+		try {
+			if (terminal.rows > 0) {
+				terminal.refresh(0, terminal.rows - 1);
+			}
+		} catch {
+			// Ignore refresh errors - renderer may still be settling after restore.
+		}
 		const ptyId = ptyIdRef.current;
 		if (terminal && ptyId) {
 			terminalApi.resize(ptyId, terminal.cols, terminal.rows).catch(() => {
@@ -1467,30 +1480,61 @@ function ConnectedTerminalComponent({
 		}
 	}, []);
 
-	// Recovery handler for visibility change (app regains focus after idle)
+	// Recovery handler for app/window visibility changes (including Tauri minimize).
 	useEffect(() => {
 		// Track timeout to prevent firing after unmount
 		let recoveryTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
+		const scheduleRecovery = (): void => {
+			if (!isVisibleRef.current) {
+				return;
+			}
+
+			// Clear any pending timeout before scheduling new one
+			if (recoveryTimeoutId) {
+				clearTimeout(recoveryTimeoutId);
+			}
+			recoveryTimeoutId = setTimeout(() => {
+				recoveryTimeoutId = null;
+				performTerminalRecovery();
+			}, VISIBILITY_RECOVERY_DELAY_MS);
+		};
+
 		const handleVisibilityChange = (): void => {
 			if (document.visibilityState === "visible") {
-				// Clear any pending timeout before scheduling new one
-				if (recoveryTimeoutId) {
-					clearTimeout(recoveryTimeoutId);
-				}
-				recoveryTimeoutId = setTimeout(() => {
-					recoveryTimeoutId = null;
-					performTerminalRecovery();
-				}, VISIBILITY_RECOVERY_DELAY_MS);
+				scheduleRecovery();
+			}
+		};
+
+		const handleAppVisibilityChange = (event: Event): void => {
+			const detail = (event as CustomEvent<AppVisibilityChangeDetail>).detail;
+			if (detail?.isVisible) {
+				scheduleRecovery();
+			}
+		};
+
+		const handleWindowFocus = (): void => {
+			if (document.visibilityState === "visible") {
+				scheduleRecovery();
 			}
 		};
 
 		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener(
+			APP_VISIBILITY_CHANGE_EVENT,
+			handleAppVisibilityChange,
+		);
+		window.addEventListener("focus", handleWindowFocus);
 		return () => {
 			if (recoveryTimeoutId) {
 				clearTimeout(recoveryTimeoutId);
 			}
 			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener(
+				APP_VISIBILITY_CHANGE_EVENT,
+				handleAppVisibilityChange,
+			);
+			window.removeEventListener("focus", handleWindowFocus);
 		};
 	}, [performTerminalRecovery]);
 
@@ -1551,7 +1595,6 @@ function ConnectedTerminalComponent({
 		<ContextMenu>
 			<ContextMenuTrigger asChild>
 				<div
-					ref={containerRef}
 					className={`w-full h-full bg-[#1e1e1e] px-4 py-0.5 pb-1 ${className}`}
 					onClick={handleContainerClick}
 					onMouseDown={(e) => {
@@ -1562,7 +1605,13 @@ function ConnectedTerminalComponent({
 							terminalRef.current.focus();
 						}
 					}}
-				/>
+				>
+					<div
+						ref={containerRef}
+						className="w-full h-full min-w-0 min-h-0 overflow-hidden"
+						data-terminal-fit-container="true"
+					/>
+				</div>
 			</ContextMenuTrigger>
 			<ContextMenuContent className="w-40">
 				<ContextMenuItem
