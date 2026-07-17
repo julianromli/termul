@@ -13,7 +13,7 @@ import { __resetLauncherSelectionCache, AgentLauncher } from './AgentLauncher'
 
 function clickMenuOption(name: string | RegExp): void {
   const dialog = screen.getByRole('dialog')
-  fireEvent.pointerDown(within(dialog).getByText(name))
+  fireEvent.pointerDown(within(dialog).getByText(name), { button: 0 })
 }
 
 function defaultReadyAgent(): SupportedAcpAgentEntry {

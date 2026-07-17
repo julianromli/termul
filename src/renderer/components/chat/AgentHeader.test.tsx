@@ -6,7 +6,7 @@ import { ConfigChip, ModeChip } from './AgentHeader'
 
 function clickMenuOption(name: string): void {
   const dialog = screen.getByRole('dialog')
-  fireEvent.pointerDown(within(dialog).getByText(name))
+  fireEvent.pointerDown(within(dialog).getByText(name), { button: 0 })
 }
 
 vi.mock('framer-motion', async () => {

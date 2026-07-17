@@ -6,7 +6,7 @@ import { ChatInputBar } from './ChatInputBar'
 
 function clickMenuOption(name: string | RegExp): void {
   const dialog = screen.getByRole('dialog')
-  fireEvent.pointerDown(within(dialog).getByText(name))
+  fireEvent.pointerDown(within(dialog).getByText(name), { button: 0 })
 }
 
 const { mockSetConfig, mockSetMode, mockSetModel } = vi.hoisted(() => ({
