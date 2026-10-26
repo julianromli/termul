@@ -46,6 +46,7 @@ mod shell_paths;
 mod skills;
 mod ssh;
 mod trackers;
+mod desktop_updater;
 mod updater_api;
 pub mod web;
 // Main-window show safety net + Wayland detection (gh-719).
@@ -1355,6 +1356,7 @@ pub fn run() {
             }
 
             app.manage(ViewMenuState::default());
+            app.manage(desktop_updater::PendingSignedUpdate::default());
 
             // Transport-neutral terminal event fan-out: desktop events remain
             // byte-compatible while the web terminal socket subscribes to the
@@ -2090,9 +2092,12 @@ pub fn run() {
             acp::commands::acp_mcp_oauth_disconnect,
             acp_registry_snapshot::acp_fetch_registry_snapshot,
             acp_binary_install::acp_install_registry_binary,
-            // Desktop updater: channel manifest fetch (CSP/CORS-free server-side
-            // reqwest for the insider/nightly paths).
+            // Desktop updater: signed channel check, install, and the older
+            // manifest fetch used by tests and diagnostics.
             updater_api::updater_fetch_channel_manifest,
+            desktop_updater::updater_check_signed,
+            desktop_updater::updater_clear_pending,
+            desktop_updater::updater_install_signed,
             // Agent Skills (Zed-compatible SKILL.md packages)
             skills::commands::list_agent_skills_cmd,
             skills::commands::read_agent_skill_cmd,

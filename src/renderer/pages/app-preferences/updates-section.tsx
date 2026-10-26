@@ -1,4 +1,4 @@
-import { ExternalLink, RefreshCw, RotateCcw } from '@/components/icons'
+import { RefreshCw, RotateCcw } from '@/components/icons'
 import { rowId } from '@/components/settings/row-id'
 import { SettingsCard, SettingsGroup } from '@/components/settings/SettingsGroup'
 import { SettingsSection } from '@/components/settings/SettingsLayout'
@@ -18,12 +18,9 @@ interface UpdatesSectionProps {
   version: string | null
   lastChecked: Date | null
   autoUpdateEnabled: boolean
-  skippedVersion: string | null
   updateError: string | null
-  isManualUpdateMode: boolean
   updateChannel: UpdateChannel
   checkForUpdates: () => void
-  installAndRestart: () => void
   handleAutoUpdateToggle: (enabled: boolean) => void
   setUpdateChannel: (channel: UpdateChannel) => void
 }
@@ -50,12 +47,9 @@ export function UpdatesSection({
   version,
   lastChecked,
   autoUpdateEnabled,
-  skippedVersion,
   updateError,
-  isManualUpdateMode,
   updateChannel,
   checkForUpdates,
-  installAndRestart,
   handleAutoUpdateToggle,
   setUpdateChannel
 }: UpdatesSectionProps): React.JSX.Element | null {
@@ -75,23 +69,11 @@ export function UpdatesSection({
     <SettingsSection id="updates">
       <SettingsGroup title="Version">
         {updateAvailable && version && (
-          <SettingsNotice
-            tone={isManualUpdateMode ? 'warning' : 'success'}
-            action={
-              !isAurUpdater && isManualUpdateMode ? (
-                <Button type="button" size="xs" onClick={installAndRestart}>
-                  <ExternalLink size={13} />
-                  Open download page
-                </Button>
-              ) : null
-            }
-          >
+          <SettingsNotice tone="success">
             <span className="font-medium text-foreground">Version {version} is available.</span>{' '}
             {isAurUpdater
               ? 'Update through the AUR with: yay -S termul-manager'
-              : isManualUpdateMode
-                ? 'Automatic update is not available. Download and install it from the release page.'
-                : 'A new version is ready to download.'}
+              : 'Choose Update in the dialog. Termul downloads, installs, and restarts.'}
           </SettingsNotice>
         )}
         {updateError && (
@@ -135,12 +117,6 @@ export function UpdatesSection({
             </Button>
           </SettingsRow>
         </SettingsCard>
-        {skippedVersion && (
-          <SettingsNotice>
-            You skipped version <span className="font-mono">{skippedVersion}</span>. Termul offers
-            updates again when a newer version is out.
-          </SettingsNotice>
-        )}
       </SettingsGroup>
 
       {!isAurUpdater && (
@@ -165,8 +141,8 @@ export function UpdatesSection({
           {updateChannel !== 'stable' && (
             <SettingsNotice tone="warning">
               {updateChannel === 'nightly'
-                ? 'Nightly builds are automated from the latest commit and may be unstable. Updates are offered as a manual download from the nightly release page.'
-                : 'Insider release candidates may be unfinished. Updates are offered as a manual download from the insider release page.'}
+                ? 'Nightly builds come from the latest commit and may be unstable. Update downloads, installs, and restarts Termul.'
+                : 'Insider builds may be unfinished. Update downloads, installs, and restarts Termul.'}
             </SettingsNotice>
           )}
         </SettingsGroup>

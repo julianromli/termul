@@ -52,7 +52,7 @@ function RouteFallback(): React.JSX.Element {
 import { isWindows } from '@/lib/platform'
 import { isTauriContext, primeServerCapability } from '@/lib/tauri-runtime'
 import { ensureClientIdentity } from '@/lib/web-client-identity'
-import { useUpdateToast } from './components/UpdateAvailableToast'
+import { UpdateAvailableDialog } from './components/UpdateAvailableDialog'
 import { useAcpAgents } from './hooks/use-acp-agents'
 import { useAcpHistory } from './hooks/use-acp-history'
 import { useAcpListeners } from './hooks/use-acp-listeners'
@@ -165,7 +165,6 @@ function AppEffects(): null {
   useShellLayoutHydration()
   useMenuUpdaterListener()
   useUpdateCheck()
-  useUpdateToast()
   useVisibilityState()
   useTerminalExitNotification()
   useTerminalIdleNotification()
@@ -277,6 +276,7 @@ const App = () => {
                 auto-denies). */}
             <BrowserConsentCardHost />
             <RouterProvider router={router} future={{ v7_startTransition: true }} />
+            <UpdateAvailableDialog />
             <WhatsNewModal
               isOpen={isTauriContext() && whatsNew.isOpen}
               version={whatsNew.version}

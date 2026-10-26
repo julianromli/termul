@@ -41,7 +41,10 @@ class IntersectionObserverMock {
 window.IntersectionObserver = IntersectionObserverMock as unknown as typeof IntersectionObserver
 
 vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn()
+  invoke: vi.fn(),
+  Channel: class Channel<T> {
+    onmessage: ((data: T) => void) | null = null
+  }
 }))
 
 // Desktop-context suites script the ACP carrier through the `invoke` mock above:
