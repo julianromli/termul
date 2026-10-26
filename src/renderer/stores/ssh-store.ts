@@ -319,6 +319,7 @@ export const useSSHStore = create<SSHState>((set, get) => ({
 
 // Selectors
 export const useSSHProfiles = () => useSSHStore((state) => state.profiles)
+export const useSSHTransfers = () => useSSHStore((state) => state.transfers)
 export const useSSHSessions = () => useSSHStore((state) => state.sessions)
 export const useSSHWorkspaceOpen = () => useSSHStore((state) => state.workspaceOpen)
 export const useSSHActiveTab = () => useSSHStore((state) => state.activeTab)

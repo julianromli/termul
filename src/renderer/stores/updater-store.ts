@@ -629,6 +629,13 @@ export function useIsDownloading(): boolean {
 }
 
 /**
+ * Selector: Get the active release channel
+ */
+export function useUpdateChannel(): UpdateChannel {
+  return useUpdaterStore((state) => state.updateChannel)
+}
+
+/**
  * Selector: Get updater state object (all state except actions)
  */
 export function useUpdaterState() {
