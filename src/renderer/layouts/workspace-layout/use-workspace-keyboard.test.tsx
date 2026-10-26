@@ -12,7 +12,6 @@ const { mockWriteDebounced, mockWrite, mockToastError } = vi.hoisted(() => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  keyboardApi: { onShortcut: vi.fn(() => () => undefined) },
   persistenceApi: {
     read: vi.fn(),
     write: mockWrite,

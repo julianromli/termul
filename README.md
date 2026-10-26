@@ -127,7 +127,7 @@ Termul treats workspaces as first-class citizens, allowing you to organize termi
 | **Snapshots**       | `CreateSnapshotModal`, `RestoreSnapshotModal`, `DeleteSnapshotModal`              | `snapshot-store`                                                               |
 | **Projects**        | `ProjectSidebar`, `NewProjectModal`                                               | `project-store`                                                                |
 | **Settings**        | `ShortcutRecorder`, `ColorPickerPopover`, `ContextBarSettingsPopover`             | `app-settings-store`, `context-bar-settings-store`, `keyboard-shortcuts-store` |
-| **Updates**         | `UpdateAvailableToast`                                                            | `updater-store`                                                                |
+| **Updates**         | `UpdateAvailableDialog`                                                           | `updater-store`                                                                |
 | **Shared**          | `CommandPalette`, `GlobalContextMenu`, `ConfirmDialog`, `ErrorBoundary`           | —                                                                              |
 
 </details>

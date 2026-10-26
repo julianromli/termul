@@ -319,8 +319,6 @@ export const useSSHStore = create<SSHState>((set, get) => ({
 
 // Selectors
 export const useSSHProfiles = () => useSSHStore((state) => state.profiles)
-export const useSSHTransfers = () => useSSHStore((state) => state.transfers)
-export const useSSHLoaded = () => useSSHStore((state) => state.isLoaded)
 export const useSSHSessions = () => useSSHStore((state) => state.sessions)
 export const useSSHWorkspaceOpen = () => useSSHStore((state) => state.workspaceOpen)
 export const useSSHActiveTab = () => useSSHStore((state) => state.activeTab)
@@ -368,7 +366,3 @@ export const useSSHActions = () =>
       toggleShowAddresses: state.toggleShowAddresses
     }))
   )
-
-/** Sessions of one host, oldest first. */
-export const useSessionsForProfile = (profileId: string) =>
-  useSSHStore(useShallow((state) => state.sessions.filter((s) => s.profileId === profileId)))
