@@ -36,9 +36,25 @@ vi.mock('@/components/settings/SettingsLayout', () => ({
   SettingsSection: ({ children }: { children: React.ReactNode }) => <section>{children}</section>
 }))
 
-vi.mock('@/components/settings/BrowserPolicySettings', () => ({
-  BrowserProjectPolicy: () => null
-}))
+vi.mock('@/components/settings/BrowserPolicySettings', async () => {
+  const { BROWSER_ANCHORS } = await vi.importActual<
+    typeof import('@/components/settings/browser-policy-copy')
+  >('@/components/settings/browser-policy-copy')
+  const ids = [
+    BROWSER_ANCHORS.projectEphemeral,
+    BROWSER_ANCHORS.projectAllowList,
+    BROWSER_ANCHORS.projectPreapprovals
+  ]
+  return {
+    BrowserProjectPolicy: () => (
+      <>
+        {ids.map((id) => (
+          <div key={id} id={id} data-settings-row="" />
+        ))}
+      </>
+    )
+  }
+})
 vi.mock('@/components/ConfirmDialog', () => ({
   ConfirmDialog: ({
     isOpen,
@@ -347,7 +363,8 @@ describe('ProjectSettings layout', () => {
       ['Project', 'shell'],
       ['Project', 'env-vars'],
       ['Project', 'symlinks'],
-      ['Agents', 'provider']
+      ['Agents', 'provider'],
+      ['Agents', 'browser']
     ])
     expect(PROJECT_SETTINGS_SEARCH_INDEX.some((e) => e.categoryId === 'emergency')).toBe(false)
   })
